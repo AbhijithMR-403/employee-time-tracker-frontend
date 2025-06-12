@@ -183,6 +183,10 @@ function App() {
   };
 
   const handleAdminViewClick = () => {
+    const token = localStorage.getItem('token');
+    if(token)
+      setIsAdminAuthenticated(true)
+
     setCurrentView('admin');
   };
 

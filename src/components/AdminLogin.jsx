@@ -15,7 +15,9 @@ const AdminLogin = ({ onLogin, adminUsers }) => {
     setError('');
 
     try {
-      await apiClient.login(email, password);
+      const res = await apiClient.login(email, password);
+      localStorage.setItem('token', res.access);
+
       onLogin();
     } catch (error) {
       setError(error.message || 'Invalid email or password. Please try again.');
