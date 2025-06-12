@@ -121,7 +121,7 @@ const AdminLogin = ({ onLogin, adminUsers }) => {
             </div>
             <p>This area is restricted to authorized personnel only.</p>
             <div className="mt-2 text-slate-500">
-              <strong>Demo:</strong> admin@gmail.com / admin@123
+              <strong>Demo:</strong> admin@gmail.com / admin
             </div>
           </div>
         </div>

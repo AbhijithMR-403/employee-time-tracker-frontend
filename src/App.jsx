@@ -111,7 +111,7 @@ function App() {
   const handleAddTimeEntry = async (entry) => {
     try {
       const newEntry = await addTimeEntry(entry);
-      setTimeEntries(prev => [...prev, newEntry]);
+      setTimeEntries(prev => [newEntry, ...prev]);
     } catch (error) {
       console.error('Error adding time entry:', error);
       setError('Failed to record time entry. Please try again.');
