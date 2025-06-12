@@ -93,15 +93,17 @@ const convertToApiAdminUser = (user) => {
 
 export const getStoredData = async () => {
   try {
-    const [employeesResponse, businessHoursResponse, adminUsersResponse] = await Promise.all([
+    const [employeesResponse, timeEntriesResponse, businessHoursResponse, adminUsersResponse] = await Promise.all([
       apiClient.getEmployees(),
+      apiClient.getTimeEntries(),
       apiClient.getCurrentBusinessHours(),
       apiClient.getAdminUsers(),
     ]);
-
+    
+    
     return {
       employees: employeesResponse.results?.map(convertApiEmployee) || employeesResponse.map?.(convertApiEmployee) || [],
-      timeEntries: [], // Will be loaded separately when needed
+      timeEntries: timeEntriesResponse || [],
       businessHours: convertApiBusinessHours(businessHoursResponse),
       adminUsers: adminUsersResponse.results?.map(convertApiAdminUser) || adminUsersResponse.map?.(convertApiAdminUser) || [],
     };

@@ -218,7 +218,6 @@ const AdminDashboard = ({
             ) : (
               <div className="space-y-4">
                 {timeEntries
-                  .slice(-10)
                   .reverse()
                   .map((entry) => {
                     const employee = employees.find(emp => emp.id === entry.employeeId);
@@ -234,7 +233,7 @@ const AdminDashboard = ({
                             'bg-blue-500'
                           }`} />
                           <div>
-                            <p className="font-medium text-slate-900">{employee?.name || 'Unknown Employee'}</p>
+                            <p className="font-medium text-slate-900">{employee?.name || entry?.employee_name || 'Unknown Employee'}</p>
                             <p className="text-sm text-slate-500">
                               {entry.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                               {entry.isLate && <span className="text-red-600 ml-2">(Late)</span>}
