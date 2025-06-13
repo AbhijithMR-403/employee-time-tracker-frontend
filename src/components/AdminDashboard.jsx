@@ -236,8 +236,8 @@ const AdminDashboard = ({
                             <p className="font-medium text-slate-900">{employee?.name || entry?.employee_name || 'Unknown Employee'}</p>
                             <p className="text-sm text-slate-500">
                               {entry.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                              {entry.isLate && <span className="text-red-600 ml-2">(Late)</span>}
-                              {entry.isEarly && <span className="text-amber-600 ml-2">(Early)</span>}
+                              {entry.is_late && <span className="text-red-600 ml-2">(Late)</span>}
+                              {entry.is_early && <span className="text-amber-600 ml-2">(Early)</span>}
                             </p>
                           </div>
                         </div>

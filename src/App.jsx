@@ -145,8 +145,8 @@ function App() {
       const updated = await updateBusinessHours(hours);
       setBusinessHours(updated);
     } catch (error) {
-      console.error('Error updating business hours:', error);
-      setError('Failed to update business hours. Please try again.');
+      console.error(error);
+      setError('' + error);
     }
   };
 
@@ -233,7 +233,7 @@ function App() {
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <User className="w-8 h-8 text-red-600" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">Connection Error</h1>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">Error ⛔</h1>
           <p className="text-slate-600 mb-4">{error}</p>
           <button
             onClick={() => window.location.reload()}

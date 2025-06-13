@@ -17,8 +17,8 @@ const convertApiTimeEntry = (apiEntry) => ({
   employeeId: apiEntry.employee,
   type: apiEntry.type,
   timestamp: apiEntry.timestamp,
-  isLate: apiEntry.is_late,
-  isEarly: apiEntry.is_early,
+  is_late: apiEntry.is_late,
+  is_early: apiEntry.is_early,
   notes: apiEntry.notes,
 });
 
