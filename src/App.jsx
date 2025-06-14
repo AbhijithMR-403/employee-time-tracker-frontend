@@ -205,7 +205,8 @@ function App() {
     setCurrentView('admin');
     };
 
-  const handleAdminLogin = () => {
+  const handleAdminLogin = (token) => {
+    apiClient.setToken(token)
     setIsAdminAuthenticated(true);
     setError(null);
   };

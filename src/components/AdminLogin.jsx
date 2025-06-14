@@ -15,13 +15,13 @@ const AdminLogin = ({ onLogin, handleLogout }) => {
     setError('');
 
     try {
-      const res = await apiClient.login(email, password);
-      if (!res?.access) {
+      const response = await apiClient.login(email, password);
+      if (!response?.access) {
         throw new Error('No access token received');
-      }  
-      localStorage.setItem('token', res.access);
-
-      onLogin();
+      }
+      
+      // The apiClient will automatically store the token
+      onLogin(response.access);
     } catch (error) {
       setError(error.message || 'Invalid email or password. Please try again.');
     } finally {

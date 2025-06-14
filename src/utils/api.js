@@ -3,17 +3,17 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000
 // API client with authentication
 class ApiClient {
   constructor() {
-    this.token = localStorage.getItem('auth_token');
+    this.token = localStorage.getItem('token');
   }
 
   setToken(token) {
     this.token = token;
-    localStorage.setItem('auth_token', token);
+    localStorage.setItem('token', token);
   }
 
   clearToken() {
     this.token = null;
-    localStorage.removeItem('auth_token');
+    localStorage.removeItem('token');
   }
 
   async request(endpoint, options = {}) {
@@ -24,7 +24,7 @@ class ApiClient {
     };
 
     if (this.token) {
-      headers['Authorization'] = `Token ${this.token}`;
+      headers['Authorization'] = `Bearer ${this.token}`;
     }
 
     const response = await fetch(url, {
@@ -126,6 +126,9 @@ class ApiClient {
   }
 
   async updateBusinessHours(businessHoursData) {
+    if (!this.token) {
+      throw new Error('Authentication required for admin access');
+    }
     return this.request('/employees/business-hours/', {
       method: 'POST',
       body: JSON.stringify(businessHoursData),
@@ -167,6 +170,9 @@ class ApiClient {
 
   // Reports
   async getReportsOverview(params) {
+    if (!this.token) {
+      throw new Error('Authentication required for admin access');
+    }
     const searchParams = new URLSearchParams();
     searchParams.append('start_date', params.start_date);
     searchParams.append('end_date', params.end_date);
@@ -198,7 +204,7 @@ class ApiClient {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': this.token ? `Token ${this.token}` : '',
+        'Authorization': `Bearer ${this.token}`,
       },
       body: JSON.stringify(params),
     });

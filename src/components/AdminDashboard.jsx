@@ -218,7 +218,7 @@ const AdminDashboard = ({
             ) : (
               <div className="space-y-4">
                 {timeEntries
-                  .reverse()
+                  .reverse().slice(0, 10)
                   .map((entry) => {
                     const employee = employees.find(emp => emp.id === entry.employeeId);
                     const timestamp = new Date(entry.timestamp);
