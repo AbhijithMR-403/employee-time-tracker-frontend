@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Lock, Mail, Eye, EyeOff, Shield } from 'lucide-react';
 import { apiClient } from '../utils/api';
 
-const AdminLogin = ({ onLogin, adminUsers }) => {
+const AdminLogin = ({ onLogin, handleLogout }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -16,6 +16,9 @@ const AdminLogin = ({ onLogin, adminUsers }) => {
 
     try {
       const res = await apiClient.login(email, password);
+      if (!res?.access) {
+        throw new Error('No access token received');
+      }  
       localStorage.setItem('token', res.access);
 
       onLogin();
@@ -120,12 +123,19 @@ const AdminLogin = ({ onLogin, adminUsers }) => {
               <span>Secure Admin Access</span>
             </div>
             <p>This area is restricted to authorized personnel only.</p>
-            <div className="mt-2 text-slate-500">
-              <strong>Demo:</strong> admin@gmail.com / admin@1234
-            </div>
+            <div className="mt-6 flex justify-center">
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="text-sm text-blue-600 hover:underline hover:text-blue-800 transition"
+            >
+              ← Back to Home
+            </button>
+          </div>
           </div>
         </div>
       </div>
+      
     </div>
   );
 };

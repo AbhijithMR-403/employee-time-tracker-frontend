@@ -3,6 +3,8 @@ import { Clock, Users, Settings, BarChart3, Calendar, User } from 'lucide-react'
 import EmployeeInterface from './components/EmployeeInterface';
 import AdminDashboard from './components/AdminDashboard';
 import AdminLogin from './components/AdminLogin';
+import { jwtDecode } from 'jwt-decode';
+
 import { 
   getStoredData, 
   addEmployee, 
@@ -184,17 +186,39 @@ function App() {
 
   const handleAdminViewClick = () => {
     const token = localStorage.getItem('token');
-    if(token)
-      setIsAdminAuthenticated(true)
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        const isExpired = decoded.exp * 1000 < Date.now();
+  
+        if (!isExpired) {
+          setIsAdminAuthenticated(true);
+          setCurrentView('admin');
+          return;
+        }
+      } catch (err) {
+        console.error('Invalid token:', err);
+      }
+    }
 
+    setIsAdminAuthenticated(false);
     setCurrentView('admin');
-  };
+    };
 
   const handleAdminLogin = () => {
     setIsAdminAuthenticated(true);
     setError(null);
   };
 
+  const handleLogout = () => {
+    // Clear JWT and any sensitive data
+    localStorage.removeItem('token');
+  
+    // Optional: clear any other user-specific state
+    setIsAdminAuthenticated(false);
+    setCurrentView('employee'); // Go back to employee view or login page
+  };
+  
   if (isMobile) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
@@ -248,7 +272,7 @@ function App() {
 
   // Show admin login if admin view is selected but not authenticated
   if (currentView === 'admin' && !isAdminAuthenticated) {
-    return <AdminLogin onLogin={handleAdminLogin} adminUsers={adminUsers} />;
+    return <AdminLogin onLogin={handleAdminLogin} handleLogout={handleLogout} />;
   }
 
   return (
@@ -302,6 +326,14 @@ function App() {
                 <BarChart3 className="w-4 h-4 inline-block mr-2" />
                 Admin
               </button>
+
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 rounded-lg font-medium text-red-600 hover:text-red-800 hover:bg-slate-100 transition-colors"
+              >
+                Logout
+              </button>
+
             </nav>
           </div>
         </div>
