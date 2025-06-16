@@ -35,6 +35,7 @@ function App() {
   const [isMobile, setIsMobile] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // Check if device is mobile and block access
   useEffect(() => {
@@ -109,6 +110,11 @@ function App() {
       setIsAdminAuthenticated(false);
     }
   }, [currentView]);
+
+  useEffect(() => {
+    // Check login status on mount
+    setIsLoggedIn(!!localStorage.getItem('token'));
+  }, []);
 
   const handleAddTimeEntry = async (entry) => {
     try {
@@ -207,6 +213,7 @@ function App() {
 
   const handleAdminLogin = (token) => {
     apiClient.setToken(token)
+    setIsLoggedIn(true);
     setIsAdminAuthenticated(true);
     setError(null);
   };
@@ -214,7 +221,7 @@ function App() {
   const handleLogout = () => {
     // Clear JWT and any sensitive data
     localStorage.removeItem('token');
-  
+    setIsLoggedIn(false);
     // Optional: clear any other user-specific state
     setIsAdminAuthenticated(false);
     setCurrentView('employee'); // Go back to employee view or login page
@@ -328,12 +335,14 @@ function App() {
                 Admin
               </button>
 
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 rounded-lg font-medium text-red-600 hover:text-red-800 hover:bg-slate-100 transition-colors"
-              >
-                Logout
-              </button>
+              {isLoggedIn && (
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 rounded-lg font-medium text-red-600 hover:text-red-800 hover:bg-slate-100 transition-colors"
+                >
+                  Logout
+                </button>
+              )}
 
             </nav>
           </div>
