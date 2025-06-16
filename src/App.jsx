@@ -292,9 +292,9 @@ function App() {
             <div className="flex items-center space-x-4">
               <div className="flex items-center">
                 <img 
-                  src="./350x180png.png" 
+                  src="./3x20 Sideways-logo.png" 
                   alt="The Service Pilot Logo" 
-                  className="h-12 w-auto"
+                  className="h-8 w-auto"
                   onError={(e) => {
                     const target = e.target;
                     target.style.display = 'none';
@@ -306,7 +306,7 @@ function App() {
                 />
               </div>
               <div className="border-l border-slate-300 pl-4">
-                <h1 className="text-2xl font-bold text-slate-900">TimeTracker Pro</h1>
+                <h1 className="text-2xl font-bold text-slate-900">CrewClock</h1>
                 <p className="text-sm text-slate-600">Employee Time Management System</p>
               </div>
             </div>
