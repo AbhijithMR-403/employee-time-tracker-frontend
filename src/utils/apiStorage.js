@@ -70,13 +70,25 @@ const convertToApiEmployee = (employee) => ({
   is_active: employee.isActive,
 });
 
-const convertToApiBusinessHours = (hours) => ({
-  start_time: hours.startTime + ':00',
-  end_time: hours.endTime + ':00',
-  break_duration: hours.breakDuration,
-  late_threshold: hours.lateThreshold,
-  is_active: true,
-});
+const convertToApiBusinessHours = (hours) => {
+  const [startHour, startMin] = hours.startTime.split(':').map(Number);
+  const [endHour, endMin] = hours.endTime.split(':').map(Number);
+
+  const now = new Date();
+  const localStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHour, startMin);
+  const localEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, endMin);
+
+  const startUtc = localStart.toISOString().substring(11, 19); // "HH:MM:SS"
+  const endUtc = localEnd.toISOString().substring(11, 19);
+
+  return {
+    start_time: startUtc,
+    end_time: endUtc,
+    break_duration: hours.breakDuration,
+    late_threshold: hours.lateThreshold,
+    is_active: true,
+  };
+};
 
 const convertToApiAdminUser = (user) => {
   const [firstName, ...lastNameParts] = user.name.split(' ');
