@@ -294,7 +294,7 @@ function App() {
                 <img 
                   src="./3x20 Sideways-logo.png" 
                   alt="The Service Pilot Logo" 
-                  className="h-8 w-auto"
+                  className="h-7 w-auto"
                   onError={(e) => {
                     const target = e.target;
                     target.style.display = 'none';
