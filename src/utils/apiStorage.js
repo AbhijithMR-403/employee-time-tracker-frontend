@@ -39,7 +39,8 @@ const convertApiAdminUser = (apiUser) => ({
   createdAt: apiUser.created_at,
 });
 
-const convertApiWorkSession = (apiSession) => ({
+export const convertApiWorkSession = (apiSession) => ({
+  id: apiSession.id,
   employeeId: apiSession.employee,
   date: apiSession.date,
   punchIn: apiSession.punch_in,
@@ -52,6 +53,7 @@ const convertApiWorkSession = (apiSession) => ({
   isLateIn: apiSession.is_late_in,
   isEarlyOut: apiSession.is_early_out,
   status: apiSession.status,
+  note: apiSession.note,
   punchCycles: apiSession.punch_cycles?.map((cycle) => ({
     punchIn: cycle.punch_in,
     punchOut: cycle.punch_out,

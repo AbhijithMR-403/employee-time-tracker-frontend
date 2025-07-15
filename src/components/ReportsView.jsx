@@ -1,13 +1,29 @@
 import React, { useState, useMemo } from 'react';
-import { Calendar, Clock, TrendingUp, Download, Filter, BarChart3, Users, AlertTriangle, History } from 'lucide-react';
+import { Calendar, Clock, TrendingUp, Download, Filter, BarChart3, Users, AlertTriangle, History, StickyNote } from 'lucide-react';
+import {apiClient} from '../utils/api';
+import { convertApiWorkSession } from '../utils/apiStorage';
+
+function toLocalInputValue(dateString) {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  const pad = n => n.toString().padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
 
 const ReportsView = ({
   workSessions,
   employees,
   dateRange,
+  onSessionEdit, // <-- add this prop
 }) => {
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [reportType, setReportType] = useState('overview');
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editSession, setEditSession] = useState(null);
+  const [editForm, setEditForm] = useState({ punchIn: '', punchOut: '', note: '' });
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState('');
+
 
   const filteredSessions = useMemo(() => {
     return workSessions.filter(session => 
@@ -80,6 +96,51 @@ const ReportsView = ({
       .sort(([a], [b]) => a.localeCompare(b))
       .slice(-14); // Last 14 days
   }, [filteredSessions]);
+
+  const openEditModal = (session) => {
+    setEditSession(session);
+    setEditForm({
+      punchIn: toLocalInputValue(session.punchIn),
+      punchOut: toLocalInputValue(session.punchOut),
+      note: session.note || '',
+    });
+    setEditError('');
+    setEditModalOpen(true);
+  };
+
+  const closeEditModal = () => {
+    setEditModalOpen(false);
+    setEditSession(null);
+    setEditForm({ punchIn: '', punchOut: '', note: '' });
+    setEditError('');
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setEditLoading(true);
+    setEditError('');
+    try {
+      const updatedSessionRaw = await apiClient.editWorkSession(editSession.id, {
+        punch_in: new Date(editForm.punchIn).toISOString(),
+        punch_out: new Date(editForm.punchOut).toISOString(),
+        note: editForm.note,
+      });
+      setEditLoading(false);
+      closeEditModal();
+      if (onSessionEdit) {
+        const updatedSession = convertApiWorkSession(updatedSessionRaw);
+        onSessionEdit(updatedSession);
+      }
+    } catch (err) {
+      setEditError(err.message || 'Failed to update session');
+      setEditLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -350,6 +411,8 @@ const ReportsView = ({
                   <th className="pb-3 text-sm font-medium text-slate-600">Break (min)</th>
                   <th className="pb-3 text-sm font-medium text-slate-600">Working Hours</th>
                   <th className="pb-3 text-sm font-medium text-slate-600">Status</th>
+                  <th className="pb-3 text-sm font-medium text-slate-600">Note</th>
+                  <th className="pb-3 text-sm font-medium text-slate-600">Edit</th>
                 </tr>
               </thead>
               <tbody>
@@ -396,6 +459,33 @@ const ReportsView = ({
                         }`}>
                           {session.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                         </span>
+                      </td>
+                      <td className="py-3">
+                        {session.note ? (
+                          <button
+                            className="p-1 bg-gray-900 rounded hover:bg-gray-800 cursor-pointer transition-colors"
+                            title="View Note"
+                            onClick={() => alert(session.note)}
+                          >
+                            <StickyNote className="w-5 h-5 text-white" />
+                          </button>
+                        ) : (
+                          <button
+                            className="p-1 bg-gray-300 rounded cursor-not-allowed"
+                            title="No Note"
+                            disabled
+                          >
+                            <StickyNote className="w-5 h-5 text-gray-400" />
+                          </button>
+                        )}
+                      </td>
+                      <td className="py-3">
+                        <button
+                          className="px-3 py-1 bg-gray-900 text-white rounded hover:bg-gray-800 text-xs cursor-pointer transition-colors"
+                          onClick={() => openEditModal(session)}
+                        >
+                          Edit
+                        </button>
                       </td>
                     </tr>
                   );
@@ -460,6 +550,75 @@ const ReportsView = ({
                 ))}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {editModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
+            <button
+              className="absolute top-2 right-2 text-gray-400 hover:text-gray-700"
+              onClick={closeEditModal}
+              aria-label="Close"
+            >
+              ×
+            </button>
+            <h2 className="text-lg font-semibold mb-4">Edit Work Session</h2>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Punch In</label>
+                <input
+                  type="datetime-local"
+                  name="punchIn"
+                  value={editForm.punchIn}
+                  onChange={handleEditChange}
+                  className="w-full border border-slate-300 rounded px-3 py-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Punch Out</label>
+                <input
+                  type="datetime-local"
+                  name="punchOut"
+                  value={editForm.punchOut}
+                  onChange={handleEditChange}
+                  className="w-full border border-slate-300 rounded px-3 py-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Note</label>
+                <textarea
+                  name="note"
+                  value={editForm.note}
+                  onChange={handleEditChange}
+                  className="w-full border border-slate-300 rounded px-3 py-2"
+                  rows={3}
+                  placeholder="Add a note (optional)"
+                />
+              </div>
+              {editError && <div className="text-red-600 text-sm">{editError}</div>}
+              <div className="flex justify-end space-x-2">
+                <button
+                  type="button"
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                  onClick={closeEditModal}
+                  disabled={editLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  disabled={editLoading}
+                >
+                  {editLoading ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

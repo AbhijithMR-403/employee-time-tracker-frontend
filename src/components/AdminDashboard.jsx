@@ -76,6 +76,15 @@ const AdminDashboard = ({
     }
   };
 
+  // Add this function to update a single session in workSessions
+  const handleSessionEdit = (updatedSession) => {
+    setWorkSessions((prev) =>
+      prev.map((session) =>
+        session.id === updatedSession.id ? { ...session, ...updatedSession } : session
+      )
+    );
+  };
+
   const tabs = [
     { id: 'overview', label: 'Overview', icon: TrendingUp },
     { id: 'reports', label: 'Reports', icon: Calendar },
@@ -267,6 +276,7 @@ const AdminDashboard = ({
           workSessions={workSessions}
           employees={employees}
           dateRange={dateRange}
+          onSessionEdit={handleSessionEdit} // <-- pass the callback
         />
       )}
 

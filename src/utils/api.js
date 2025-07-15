@@ -143,6 +143,14 @@ class ApiClient {
     });
   }
 
+  async editWorkSession(id, data) {
+    
+    return this.request(`/timetracking/sessions/${id}/edit/`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
   async getWorkStatus(employeeId) {
     return this.request(`/timetracking/status/${employeeId}/`);
   }

@@ -1,11 +1,28 @@
 import React, { useState } from 'react';
 import { Clock, Save, AlertCircle } from 'lucide-react';
 
+// Utility functions for UTC <-> Local time conversion
+function utcToLocalTimeString(utcTimeStr) {
+  if (!utcTimeStr || typeof utcTimeStr !== 'string') return '';
+  const [h = '00', m = '00', s = '00'] = utcTimeStr.split(":");
+  const date = new Date();
+  date.setUTCHours(Number(h), Number(m), Number(s || 0), 0);
+  // Get local time in "HH:mm"
+  return date.toTimeString().slice(0, 5);
+}
+
+
 const BusinessHoursSettings = ({
   businessHours,
   onUpdateBusinessHours,
 }) => {
-  const [formData, setFormData] = useState(businessHours);
+  // Initialize formData with local time for startTime and endTime, fallback to default if missing
+  
+  const [formData, setFormData] = useState({
+    ...businessHours,
+    startTime: utcToLocalTimeString(businessHours.startTime),
+    endTime: utcToLocalTimeString(businessHours.endTime),
+  });
   const [saved, setSaved] = useState(false);
 
   const handleSubmit = (e) => {
