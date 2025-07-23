@@ -50,14 +50,15 @@ const EmployeeInterface = ({
 
       setIsLoading(true);
       try {
-        const today = new Date().toISOString().split('T')[0];
+        const today = new Date().toLocaleDateString('en-CA');
         
         // Load work status and session
         const [statusData, sessionData] = await Promise.all([
           getWorkStatus(selectedEmployee.id),
           getCurrentWorkSession(selectedEmployee.id, [], today)
         ]);
-
+        
+        
         setWorkStatus(statusData);
         setCurrentSession(sessionData);
 
