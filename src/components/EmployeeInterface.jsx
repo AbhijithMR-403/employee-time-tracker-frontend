@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Coffee, LogIn, LogOut, User, AlertCircle, History } from 'lucide-react';
-import { getCurrentWorkSession, getCurrentWorkStatus } from '../utils/apiTimeCalculations';
+import { Clock, Coffee, LogIn, LogOut, User, AlertCircle, History, Calendar, TrendingUp } from 'lucide-react';
+import { getCurrentWorkSession, getCurrentWorkStatus, getWeeklyHours } from '../utils/apiTimeCalculations';
 import { getWorkStatus } from '../utils/apiStorage';
 
 const EmployeeInterface = ({
@@ -16,7 +16,9 @@ const EmployeeInterface = ({
   const [currentSession, setCurrentSession] = useState(null);
   const [workStatus, setWorkStatus] = useState(null);
   const [todayEntries, setTodayEntries] = useState([]);
+  const [weeklyHours, setWeeklyHours] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingWeekly, setIsLoadingWeekly] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -49,18 +51,21 @@ const EmployeeInterface = ({
       }
 
       setIsLoading(true);
+      setIsLoadingWeekly(true);
       try {
         const today = new Date().toLocaleDateString('en-CA');
         
-        // Load work status and session
-        const [statusData, sessionData] = await Promise.all([
+        // Load work status, session, and weekly hours
+        const [statusData, sessionData, weeklyData] = await Promise.all([
           getWorkStatus(selectedEmployee.id),
-          getCurrentWorkSession(selectedEmployee.id, [], today)
+          getCurrentWorkSession(selectedEmployee.id, [], today),
+          getWeeklyHours(selectedEmployee.id)
         ]);
         
         
         setWorkStatus(statusData);
         setCurrentSession(sessionData);
+        setWeeklyHours(weeklyData);
 
         // Filter today's entries from the timeEntries prop
         const todaysEntries = timeEntries.filter(entry => 
@@ -73,6 +78,7 @@ const EmployeeInterface = ({
         console.error('Error loading employee data:', error);
       } finally {
         setIsLoading(false);
+        setIsLoadingWeekly(false);
       }
     };
 
@@ -93,9 +99,13 @@ const EmployeeInterface = ({
         isEarly: false, // Will be calculated by backend
       });
 
-      // Reload work status after punch action
-      const statusData = await getWorkStatus(selectedEmployee.id);
+      // Reload work status and weekly hours after punch action
+      const [statusData, weeklyData] = await Promise.all([
+        getWorkStatus(selectedEmployee.id),
+        getWeeklyHours(selectedEmployee.id)
+      ]);
       setWorkStatus(statusData);
+      setWeeklyHours(weeklyData);
     } catch (error) {
       console.error('Error recording punch action:', error);
     }
@@ -423,6 +433,165 @@ const EmployeeInterface = ({
               )}
             </div>
           )}
+
+          {/* Weekly Hours Summary */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                <Calendar className="w-5 h-5 text-slate-600" />
+                <h3 className="text-lg font-semibold text-slate-900">Last 7 Days</h3>
+                {isLoadingWeekly && (
+                  <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                )}
+              </div>
+              <button
+                onClick={async () => {
+                  if (!selectedEmployee) return;
+                  setIsLoadingWeekly(true);
+                  try {
+                    const weeklyData = await getWeeklyHours(selectedEmployee.id);
+                    setWeeklyHours(weeklyData);
+                  } catch (error) {
+                    console.error('Error refreshing weekly hours:', error);
+                  } finally {
+                    setIsLoadingWeekly(false);
+                  }
+                }}
+                disabled={isLoadingWeekly}
+                className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Refresh
+              </button>
+            </div>
+            
+            {weeklyHours ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                  <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="text-2xl font-bold text-blue-900">
+                      {weeklyHours.totalHours.toFixed(1)}h
+                    </div>
+                    <div className="text-sm text-blue-700 mt-1">Total Hours</div>
+                  </div>
+                  
+                  <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+                    <div className="text-2xl font-bold text-green-900">
+                      {weeklyHours.daysWorked}
+                    </div>
+                    <div className="text-sm text-green-700 mt-1">Days Worked</div>
+                  </div>
+                  
+                  <div className="text-center p-4 bg-amber-50 rounded-lg border border-amber-200">
+                    <div className="text-2xl font-bold text-amber-900">
+                      {weeklyHours.averageHoursPerDay.toFixed(1)}h
+                    </div>
+                    <div className="text-sm text-amber-700 mt-1">Avg/Day</div>
+                  </div>
+                  
+                  <div className="text-center p-4 bg-slate-50 rounded-lg border border-slate-200">
+                    <div className="text-2xl font-bold text-slate-900">
+                      {weeklyHours.totalBreakTime.toFixed(0)}m
+                    </div>
+                    <div className="text-sm text-slate-700 mt-1">Break Time</div>
+                  </div>
+                </div>
+
+                {/* Weekly Date Range */}
+                <div className="text-center mb-4 p-3 bg-slate-50 rounded-lg">
+                                  <div className="text-sm text-slate-600">
+                  {new Date(weeklyHours.weekStart).toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric' 
+                  })} - {new Date(weeklyHours.weekEnd).toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric',
+                    year: 'numeric'
+                  })} (Last 7 days)
+                </div>
+                </div>
+
+                {/* Daily Breakdown */}
+                {weeklyHours.dailyBreakdown.length > 0 && (
+                  <div>
+                    <div className="flex items-center space-x-2 mb-3">
+                      <TrendingUp className="w-5 h-5 text-slate-600" />
+                      <h4 className="font-medium text-slate-900">Daily Breakdown</h4>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                             {weeklyHours.dailyBreakdown.map((day, index) => (
+                         <div key={index} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                           <div className="flex items-center justify-between mb-2">
+                             <span className="font-medium text-slate-900">{day.dayName}</span>
+                             <span className="text-sm text-slate-600">
+                               {new Date(day.date).toLocaleDateString('en-US', { 
+                                 month: 'short', 
+                                 day: 'numeric' 
+                               })}
+                             </span>
+                           </div>
+                           
+                           {/* Punch Times */}
+                           <div className="mb-2 space-y-1">
+                             <div className="flex items-center justify-between text-xs">
+                               <span className="text-slate-600">In:</span>
+                               <span className="font-medium text-slate-900">
+                                 {day.punchIn 
+                                   ? new Date(day.punchIn).toLocaleTimeString('en-US', {
+                                       hour: '2-digit',
+                                       minute: '2-digit'
+                                     })
+                                   : '--:--'
+                                 }
+                               </span>
+                             </div>
+                             <div className="flex items-center justify-between text-xs">
+                               <span className="text-slate-600">Out:</span>
+                               <span className="font-medium text-slate-900">
+                                 {day.punchOut 
+                                   ? new Date(day.punchOut).toLocaleTimeString('en-US', {
+                                       hour: '2-digit',
+                                       minute: '2-digit'
+                                     })
+                                   : '--:--'
+                                 }
+                               </span>
+                             </div>
+                           </div>
+                           
+                           <div className="flex items-center justify-between">
+                             <span className="text-lg font-semibold text-slate-900">
+                               {day.hours.toFixed(1)}h
+                             </span>
+                             <div className="flex items-center space-x-1">
+                               {day.isLate && (
+                                 <span className="text-xs text-red-600 bg-red-100 px-1 rounded">Late</span>
+                               )}
+                               {day.isEarly && (
+                                 <span className="text-xs text-amber-600 bg-amber-100 px-1 rounded">Early</span>
+                               )}
+                             </div>
+                           </div>
+                           {day.breakTime > 0 && (
+                             <div className="text-xs text-slate-500 mt-1">
+                               Break: {day.breakTime.toFixed(0)}m
+                             </div>
+                           )}
+                         </div>
+                       ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-8">
+                <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Calendar className="w-6 h-6 text-slate-400" />
+                </div>
+                <p className="text-slate-600">No weekly data available</p>
+                <p className="text-sm text-slate-500 mt-1">Start working to see your weekly hours</p>
+              </div>
+            )}
+          </div>
 
           {/* Today's Activity Log */}
           {todayEntries.length > 0 && (

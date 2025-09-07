@@ -115,3 +115,65 @@ export const exportToCSV = async (workSessions, employees) => {
     return '';
   }
 };
+
+// Get weekly hours summary for an employee
+export const getWeeklyHours = async (employeeId, date = new Date()) => {
+  try {
+    if (!employeeId) {
+      throw new Error('Employee ID is required');
+    }
+
+    // Calculate the last 7 days from today
+    const currentDate = new Date(date);
+    currentDate.setHours(23, 59, 59, 999); // End of today
+    
+    const sevenDaysAgo = new Date(currentDate);
+    sevenDaysAgo.setDate(currentDate.getDate() - 6); // 7 days total (including today)
+    sevenDaysAgo.setHours(0, 0, 0, 0); // Start of 7 days ago
+    
+    const startDate = sevenDaysAgo.toISOString().split('T')[0];
+    const endDate = currentDate.toISOString().split('T')[0];
+    
+    // Get work sessions for the week
+    const sessions = await generateWorkSessions([], startDate, endDate);
+    const employeeSessions = sessions.filter(session => session.employeeId === employeeId);
+    
+    // Calculate totals
+    const totalHours = employeeSessions.reduce((sum, session) => sum + (session.workingHours || 0), 0);
+    const totalBreakTime = employeeSessions.reduce((sum, session) => sum + (session.breakDuration || 0), 0);
+    const daysWorked = employeeSessions.length;
+    
+    // Get daily breakdown
+    const dailyBreakdown = employeeSessions.map(session => ({
+      date: session.date,
+      dayName: new Date(session.date).toLocaleDateString('en-US', { weekday: 'short' }),
+      hours: session.workingHours || 0,
+      breakTime: session.breakDuration || 0,
+      isLate: session.isLateIn,
+      isEarly: session.isEarlyOut,
+      punchIn: session.punchIn || session.punch_in,
+      punchOut: session.punchOut || session.punch_out
+    }));
+    
+    return {
+      weekStart: startDate,
+      weekEnd: endDate,
+      totalHours: parseFloat(totalHours.toFixed(2)),
+      totalBreakTime: parseFloat(totalBreakTime.toFixed(2)),
+      daysWorked,
+      dailyBreakdown,
+      averageHoursPerDay: daysWorked > 0 ? parseFloat((totalHours / daysWorked).toFixed(2)) : 0
+    };
+  } catch (error) {
+    console.error('Error fetching weekly hours:', error);
+    return {
+      weekStart: '',
+      weekEnd: '',
+      totalHours: 0,
+      totalBreakTime: 0,
+      daysWorked: 0,
+      dailyBreakdown: [],
+      averageHoursPerDay: 0
+    };
+  }
+};
